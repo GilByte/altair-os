@@ -1,34 +1,65 @@
 name: altair-os
-description: Altair OS – immutable system z UX jak macOS/Windows. Gotowy dla użytkowników domowych i deweloperów.
+description: Altair OS
 base-image: ghcr.io/ublue-os/silverblue-main
 image-version: latest
 
-# RPM-y (instalowane do warstwy systemowej)
+# RPM-y (do /usr, czyli warstwa systemowa)
 packages:
+  # Systemowe GUI i core
   - gnome-software
   - gnome-software-plugin-flatpak
-  - gnome-software-plugin-snap
   - gnome-terminal
   - gnome-tweaks
-  - firefox
-  - gstreamer1-plugin-openh264
-  - gstreamer1-plugins-bad-free
-  - gstreamer1-plugins-good
-  - gstreamer1-plugins-base
+  - nautilus
+  - file-roller
+  - xdg-utils
+  - gnome-control-center
+  - gnome-extensions-app
+  - gnome-calendar
+  - gnome-clocks
+  - gnome-logs
+  - gnome-contacts
+  - gnome-system-monitor
+  - gnome-disks
+  - gnome-initial-setup
+  - gnome-backgrounds
+  - langpacks-pl
+  - langpacks-en
+
+  # Flatpak & integracje
   - flatpak
   - flatpak-xdg-utils
   - libappstream-glib
   - mimeinfo-cache
-  - xdg-utils
-  - file-roller
-  - nautilus
-  - tilix  # alternatywa dla terminala GNOME
-  - toolbox
-  - dconf-editor
-  - langpacks-pl
-  - langpacks-en
 
-# Flatpaki preinstalowane (z Flathuba)
+  # Timeshift (do snapshotów systemu)
+  - timeshift
+
+  # Nextcloud Desktop Client (bez GOA)
+  - nextcloud-client
+  - qt5-qtbase-gui  # zależności
+
+  # Sterowniki / firmware / kernel tools
+  - fwupd
+  - lshw
+  - pciutils
+
+  # Audio
+  - rhythmbox  # GUI do odtwarzania dźwięku (prosty, nie za ciężki)
+
+  # GSConnect
+  - nautilus-python
+  - sshfs
+  - gnome-shell-extension-gsconnect
+
+  # Toolbox
+  - toolbox
+  - tilix
+
+  # DConf GUI
+  - dconf-editor
+
+# Flatpaki (preinstalowane)
 flatpaks:
   - org.mozilla.firefox
   - com.github.tchx84.Flatseal
@@ -36,8 +67,12 @@ flatpaks:
   - org.gnome.Loupe
   - org.gnome.Calculator
   - org.gnome.TextEditor
+  - com.mattjakeman.ExtensionManager
+  - org.gnome.Weather
+  - org.kde.kdenlive
+  - org.gnome.Baobab
 
-# Ustawienia środowiska GNOME (opcjonalnie później override w ISO)
+# GSettings – ustawienia systemowe
 gsettings:
   org.gnome.desktop.interface:
     color-scheme: 'prefer-dark'
@@ -46,32 +81,33 @@ gsettings:
     dock-fixed: true
     click-action: 'minimize'
 
-# Dodanie Flathuba jako główne źródło Flatpaków
-post-install:
-  - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  - update-desktop-database
-  - gtk-update-icon-cache
-
-# Skrypty MIME/installerów – opcjonalnie mogą trafić do /usr/share/applications później
+# MIME – obsługa flatpakref
 mimeapps:
   'application/vnd.flatpak.ref': gnome-software.desktop
   'application/x-flatpakref': gnome-software.desktop
   'x-scheme-handler/flatpakref': gnome-software.desktop
 
-# Dodatki systemowe
+# Post-install script – integracje, remotes, cache
+post-install:
+  - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  - update-desktop-database
+  - gtk-update-icon-cache
+  - mkdir -p /etc/skel/Nextcloud && echo "# Nextcloud folder dla nowych użytkowników" > /etc/skel/Nextcloud/readme.txt
+
+# Rozszerzenia GNOME
 extensions:
   - user-theme
   - appindicator
   - dash-to-dock
+  - gsconnect  # jeśli nie działa, GSConnect można aktywować z Extension Managera
 
-# App Center branding – dodanie własnych ikon, opisów, metadanych (do rozwoju później)
+# Branding (opcjonalnie podmień ikony/tapetę)
 branding:
   wallpaper: /usr/share/backgrounds/altair-wallpaper.jpg
   icon-theme: Adwaita
   cursor-theme: Adwaita
 
-# Tagowanie wersji
+# Metadata
 labels:
-  variant: home
   version: "1.0"
   os: altair
