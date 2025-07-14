@@ -1,44 +1,77 @@
----
-# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
 name: altair-os
-# description will be included in the image's metadata
-description: This is my personal OS image.
-
-# the base image to build on top of (FROM) and the version tag to use
+description: Altair OS – immutable system z UX jak macOS/Windows. Gotowy dla użytkowników domowych i deweloperów.
 base-image: ghcr.io/ublue-os/silverblue-main
-image-version: 41 # latest is also supported if you want new updates ASAP
+image-version: latest
 
-# module configuration, executed in order
-# you can include multiple instances of the same module
-modules:
-  - type: files
-    files:
-      - source: system
-        destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
+# RPM-y (instalowane do warstwy systemowej)
+packages:
+  - gnome-software
+  - gnome-software-plugin-flatpak
+  - gnome-software-plugin-snap
+  - gnome-terminal
+  - gnome-tweaks
+  - firefox
+  - gstreamer1-plugin-openh264
+  - gstreamer1-plugins-bad-free
+  - gstreamer1-plugins-good
+  - gstreamer1-plugins-base
+  - flatpak
+  - flatpak-xdg-utils
+  - libappstream-glib
+  - mimeinfo-cache
+  - xdg-utils
+  - file-roller
+  - nautilus
+  - tilix  # alternatywa dla terminala GNOME
+  - toolbox
+  - dconf-editor
+  - langpacks-pl
+  - langpacks-en
 
-  - type: rpm-ostree
-    repos:
-      - https://copr.fedorainfracloud.org/coprs/atim/starship/repo/fedora-%OS_VERSION%/atim-starship-fedora-%OS_VERSION%.repo
-    install:
-      - micro
-      - starship
-    remove:
-      # example: removing firefox (in favor of the flatpak)
-      # "firefox" is the main package, "firefox-langpacks" is a dependency
-      - firefox
-      - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+# Flatpaki preinstalowane (z Flathuba)
+flatpaks:
+  - org.mozilla.firefox
+  - com.github.tchx84.Flatseal
+  - com.valvesoftware.Steam
+  - org.gnome.Loupe
+  - org.gnome.Calculator
+  - org.gnome.TextEditor
 
-  - type: default-flatpaks
-    notify: true # Send notification after install/uninstall is finished (true/false)
-    system:
-      # If no repo information is specified, Flathub will be used by default
-      install:
-        - org.mozilla.firefox
-        - org.gnome.Loupe
-      remove:
-        - org.gnome.eog
-    user: {} # Also add Flathub user repo, but no user packages
+# Ustawienia środowiska GNOME (opcjonalnie później override w ISO)
+gsettings:
+  org.gnome.desktop.interface:
+    color-scheme: 'prefer-dark'
+    gtk-theme: 'Adwaita-dark'
+  org.gnome.shell.extensions.dash-to-dock:
+    dock-fixed: true
+    click-action: 'minimize'
 
-  - type: signing # this sets up the proper policy & signing files for signed images to work fully
+# Dodanie Flathuba jako główne źródło Flatpaków
+post-install:
+  - flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  - update-desktop-database
+  - gtk-update-icon-cache
 
+# Skrypty MIME/installerów – opcjonalnie mogą trafić do /usr/share/applications później
+mimeapps:
+  'application/vnd.flatpak.ref': gnome-software.desktop
+  'application/x-flatpakref': gnome-software.desktop
+  'x-scheme-handler/flatpakref': gnome-software.desktop
+
+# Dodatki systemowe
+extensions:
+  - user-theme
+  - appindicator
+  - dash-to-dock
+
+# App Center branding – dodanie własnych ikon, opisów, metadanych (do rozwoju później)
+branding:
+  wallpaper: /usr/share/backgrounds/altair-wallpaper.jpg
+  icon-theme: Adwaita
+  cursor-theme: Adwaita
+
+# Tagowanie wersji
+labels:
+  variant: home
+  version: "1.0"
+  os: altair
